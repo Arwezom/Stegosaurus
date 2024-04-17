@@ -7,4 +7,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Leadtools.Formats.Raster.Common" Version="23.0.0.1" />
+    <PackageReference Include="Spectre.Console" Version="0.48.0" />
+  </ItemGroup>
+
 </Project>
