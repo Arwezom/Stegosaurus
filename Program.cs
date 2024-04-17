@@ -3,20 +3,22 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Runtime.InteropServices;
+using System.Security.Cryptography.X509Certificates;
 using Leadtools.ImageProcessing;
 using Spectre.Console;
 
 namespace Stegosaurus
 {
+
     class Stegosaurus
     {
-
-
         static String LoadImage;
         [DllImport("kernel32.dll", EntryPoint = "GetConsoleWindow", SetLastError = true)]
         private static extern IntPtr GetConsoleHandle();
         static async Task Main()
         {
+            System.Console.WindowWidth = 125;
+            System.Console.WindowHeight = 40;
             //Clear
             Console.Clear();
             var title = new Table();
@@ -41,16 +43,16 @@ namespace Stegosaurus
                 new SelectionPrompt<string>()
                         .PageSize(10)
                         .AddChoices(new[] {
-                            "LoadFile", "ShowFile", "Write Message",
+                            "Load File", "Show BitMap", "Write Message",
                             "Encrypt", "Save", "Exit",
                         }));
 
             //Select Interface
             switch (Select)
             {
-                case "LoadFile":
+                case "Load File":
                     LoadFile(); break;
-                case "ShowFile":
+                case "Show BitMap":
                     await ShowImage(); break;
                 case "WriteMessage":
                     WriteMSG(); break;
@@ -176,18 +178,13 @@ namespace Stegosaurus
                 await AnsiConsole.Progress()
                 .StartAsync(async ctx =>
             {
-
-
                 // Define tasks
-                var task1 = ctx.AddTask("[white]Justify Image[/]");
-                var task2 = ctx.AddTask("[white]Create BitMap[/]");
+                var task1 = ctx.AddTask("-----------------------------[white]Justify Image[/]");
+                var task2 = ctx.AddTask("-----------------------------[white]Create BitMap[/]");
 
 
                 while (!ctx.IsFinished)
                         {
-
-
-
                             //Clear
                             Console.Clear();
 
@@ -212,21 +209,9 @@ namespace Stegosaurus
                 //Title
                 AnsiConsole.Write(title);
 
-
-                //Draw BitMap Image
-                Console.SetCursorPosition((Console.WindowWidth - LoadImage.Length) / 2, Console.CursorTop);
-                ConsoleWriteImage(new Bitmap(LoadImage));
-
-                //Wait
-                Thread.Sleep(3000);
-
-                //Load Normal Image
-               /* var handler = GetConsoleHandle();
-
-                using (var graphics = Graphics.FromHwnd(handler))
-                using (var image = Image.FromFile(LoadImage))
-                    graphics.DrawImage(image, 310, 110, 260, 260);
-               */
+                //Write BitMap And Show Image
+                Bitmap bmpSrc = new Bitmap(LoadImage, true);
+                ConsoleWriteImage(bmpSrc);
             }
             Thread.Sleep(3000);
             Console.WriteLine();
@@ -250,7 +235,7 @@ namespace Stegosaurus
 
         static void Exit()
         {
-
+            Environment.Exit(0);
         }
 
         //Color Code for BitMap
@@ -263,25 +248,41 @@ namespace Stegosaurus
             return index;
         }
 
-
-        //Create BitMap
-         public static void ConsoleWriteImage(Bitmap src)
+        //Create Bitmap 
+        //https://stackoverflow.com/questions/33538527/display-an-image-in-a-console-application
+        public static void ConsoleWriteImage(Bitmap bmpSrc)
         {
-            int min = 32;
-            decimal pct = Math.Min(decimal.Divide(min, src.Width), decimal.Divide(min, src.Height));
-            System.Drawing.Size res = new System.Drawing.Size((int)(src.Width * pct), (int)(src.Height * pct));
-            Bitmap bmpMin = new Bitmap(src, res);
-            for (int i = 0; i < res.Height; i++)
+            int sMax = 40;
+            decimal percent = Math.Min(decimal.Divide(sMax, bmpSrc.Width), decimal.Divide(sMax, bmpSrc.Height));
+            System.Drawing.Size resSize = new System.Drawing.Size((int)(bmpSrc.Width * percent), (int)(bmpSrc.Height * percent));
+            Func<System.Drawing.Color, int> ToConsoleColor = c =>
             {
-                for (int j = 0; j < res.Width; j++)
+                int index = (c.R > 128 | c.G > 128 | c.B > 128) ? 8 : 0;
+                index |= (c.R > 64) ? 4 : 0;
+                index |= (c.G > 64) ? 2 : 0;
+                index |= (c.B > 64) ? 1 : 0;
+                return index;
+            };
+            Bitmap bmpMax = new Bitmap(bmpSrc, resSize.Width * 2, resSize.Height * 2);
+            for (int i = 0; i < resSize.Height; i++)
+            {
+                Console.BackgroundColor = ConsoleColor.Black;
+                Console.Write("                    ");
+
+                for (int j = 0; j < resSize.Width; j++)
                 {
-                    Console.ForegroundColor = (ConsoleColor)ToConsoleColor(bmpMin.GetPixel(j, i));
-                    Console.Write("██");
+                    Console.ForegroundColor = (ConsoleColor)ToConsoleColor(bmpMax.GetPixel(j * 2, i * 2));
+                    Console.BackgroundColor = (ConsoleColor)ToConsoleColor(bmpMax.GetPixel(j * 2, i * 2 + 1));
+                    Console.Write("▀");
+
+                    Console.ForegroundColor = (ConsoleColor)ToConsoleColor(bmpMax.GetPixel(j * 2 + 1, i * 2));
+                    Console.BackgroundColor = (ConsoleColor)ToConsoleColor(bmpMax.GetPixel(j * 2 + 1, i * 2 + 1));
+                    Console.Write("▀");
                 }
                 System.Console.WriteLine();
             }
+        }
     }
-}
 }
 
 
