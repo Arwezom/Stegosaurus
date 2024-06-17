@@ -192,7 +192,10 @@ namespace Stegosaurus
 
             //Search File
             string DummyFile = Console.ReadLine();
-            LoadImage = @"C:\Users\jakob\OneDrive\Desktop\Stegosaurus\Stegosaurus\" + DummyFile;
+            string directoryPath = Directory.GetCurrentDirectory();
+            LoadImage = Path.Combine(directoryPath, DummyFile);
+            Console.WriteLine(LoadImage);
+
 
 
             //Wait (Loading)
